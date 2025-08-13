@@ -1,0 +1,12 @@
+### Instalar plugin no vs code
+1. Acesse a aba de extensões no vs code (ou pressione `Ctrl+Shift+X`).
+2. Busque por "REST Client" e instale a extensão.
+3. Reinicie o vs code, se necessário.
+
+### Buscar Endereço
+GET http://localhost:3000/cep/29221600
+Content-Type: application/json
+
+### Buscar CEP
+GET http://localhost:3000/cep/address/es/guarapari/rua%20diamante
+Content-Type: application/json

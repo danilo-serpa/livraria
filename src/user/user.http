@@ -7,6 +7,10 @@
 GET http://localhost:3000/user
 Content-Type: application/json
 
+### Buscar um usuário
+GET http://localhost:3000/user/4
+Content-Type: application/json
+
 ### Criar usuário
 POST http://localhost:3000/user
 Content-Type: application/json

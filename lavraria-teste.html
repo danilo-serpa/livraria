@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Cadastro de Usuário</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 700px; margin: 20px auto; }
+  h1, h2 { text-align: center; }
+  form { display: flex; flex-direction: column; gap: 10px; }
+  label { display: flex; flex-direction: column; font-weight: bold; }
+  input { padding: 8px; font-size: 14px; }
+  button { padding: 8px; font-size: 14px; cursor: pointer; margin-right: 5px; }
+  #resultado, #listaUsuarios { margin-top: 20px; padding: 10px; border: 1px solid #ccc; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+</style>
+</head>
+<body>
+
+<h1>Cadastro de Usuário</h1>
+
+<form id="cadastroForm">
+  <label>Username:
+    <input type="text" id="username" required>
+  </label>
+
+  <label>Senha:
+    <input type="password" id="password" required>
+  </label>
+
+  <label>CEP:
+    <input type="text" id="cep" maxlength="8" required>
+  </label>
+
+  <label>Logradouro:
+    <input type="text" id="logradouro">
+  </label>
+
+  <label>Bairro:
+    <input type="text" id="bairro">
+  </label>
+
+  <label>Cidade:
+    <input type="text" id="cidade">
+  </label>
+
+  <label>Estado:
+    <input type="text" id="uf" maxlength="2">
+  </label>
+
+  <button type="submit">Salvar</button>
+</form>
+
+<div id="resultado"></div>
+
+<h2>Usuários Cadastrados</h2>
+<table id="tabelaUsuarios">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Username</th>
+      <th>CEP</th>
+      <th>Endereço</th>
+      <th>Ações</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Linhas de usuários serão inseridas aqui -->
+  </tbody>
+</table>
+
+<script>
+const baseUrl = 'http://localhost:3000';
+const form = document.getElementById('cadastroForm');
+const resultado = document.getElementById('resultado');
+
+let editandoId = null;
+
+// Função para listar usuários na tabela
+function listarUsuarios() {
+  fetch(`${baseUrl}/user`)
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.querySelector('#tabelaUsuarios tbody');
+      tbody.innerHTML = '';
+
+      data.forEach(user => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${user.id}</td>
+          <td>${user.name}</td>
+          <td>${user.cep || '-'}</td>
+          <td>${user.address || '-'}</td>
+          <td>
+            <button onclick="editarUsuario(${user.id})">Editar</button>
+            <button onclick="excluirUsuario(${user.id})">Excluir</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(err => console.error(err));
+}
+
+// Função para excluir usuário
+function excluirUsuario(id) {
+  if (!confirm('Deseja realmente excluir este usuário?')) return;
+
+  fetch(`${baseUrl}/user/${id}`, { method: 'DELETE' })
+    .then(res => {
+      if (!res.ok) {
+        throw new Error(`Erro ao excluir: ${res.status}`);
+      }
+      listarUsuarios(); // recarrega a lista assim que excluir
+    })
+    .catch(err => console.error(err));
+}
+
+// Função para editar usuário
+function editarUsuario(id) {
+  fetch(`${baseUrl}/user/${id}`)
+    .then(res => res.json())
+    .then(user => {
+      editandoId = id; // modo edição
+
+      document.getElementById('username').value = user.name;
+      document.getElementById('password').value = '';
+      document.getElementById('cep').value = user.cep;
+      if(user.address){
+        const partes = user.address.split(',');
+        document.getElementById('logradouro').value = partes[0]?.trim() || '';
+        document.getElementById('bairro').value = partes[1]?.trim() || '';
+        const cidadeUf = (partes[2] || '').split('-');
+        document.getElementById('cidade').value = cidadeUf[0]?.trim() || '';
+        document.getElementById('uf').value = cidadeUf[1]?.trim() || '';
+      }
+    })
+    .catch(err => console.error(err));
+}
+
+// Preenchimento automático do endereço pelo CEP
+document.getElementById('cep').addEventListener('blur', () => {
+  const cep = document.getElementById('cep').value;
+  if(cep.length === 8){
+    fetch(`${baseUrl}/cep/${cep}`)
+      .then(res => res.json())
+      .then(data => {
+        if(!data.erro){
+          document.getElementById('logradouro').value = data.logradouro;
+          document.getElementById('bairro').value = data.bairro;
+          document.getElementById('cidade').value = data.localidade;
+          document.getElementById('uf').value = data.uf;
+        }
+      })
+      .catch(err => console.error(err));
+  }
+});
+
+// Handler único para cadastro e edição
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+
+  const userData = {
+    name: document.getElementById('username').value,
+    password: document.getElementById('password').value,
+    cep: document.getElementById('cep').value,
+    address: `${document.getElementById('logradouro').value}, ${document.getElementById('bairro').value}, ${document.getElementById('cidade').value} - ${document.getElementById('uf').value}`
+  };
+
+  let url = `${baseUrl}/user`;
+  let method = 'POST';
+
+  if(editandoId){ // se estiver editando
+    url = `${baseUrl}/user/${editandoId}`;
+    method = 'PUT';
+  }
+
+  fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(userData)
+  })
+  .then(res => res.json())
+  .then(data => {
+    resultado.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    form.reset();
+    editandoId = null; // volta para modo cadastro
+    listarUsuarios();
+  })
+  .catch(err => {
+    resultado.innerHTML = `<p style="color:red">Erro: ${err}</p>`;
+    console.error(err);
+  });
+});
+
+// Lista os usuários ao carregar a página
+window.addEventListener('load', listarUsuarios);
+</script>
+
+</body>
+</html>

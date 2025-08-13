@@ -8,9 +8,15 @@ export class User {
     @Column()
     name: string;
 
-    @Column()
+    @Column({ nullable: true })
     email: string;
 
     @Column({ nullable: true })
     password: string;
+
+    @Column({ nullable: true })
+    cep: string;
+
+    @Column({ nullable: true })
+    address: string;
 }
