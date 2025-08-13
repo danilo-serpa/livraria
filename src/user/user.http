@@ -1,0 +1,30 @@
+### Instalar plugin no vs code
+1. Acesse a aba de extensões no vs code (ou pressione `Ctrl+Shift+X`).
+2. Busque por "REST Client" e instale a extensão.
+3. Reinicie o vs code, se necessário.
+
+### Listar usuários
+GET http://localhost:3000/user
+Content-Type: application/json
+
+### Criar usuário
+POST http://localhost:3000/user
+Content-Type: application/json
+
+{
+  "name": "Teste",
+  "email": "teste@example.com",
+  "password": "admin"
+}
+
+### Atualizar usuário
+PUT http://localhost:3000/user/1
+Content-Type: application/json
+
+{
+  "password": "admin"
+}
+
+### Deletar usuário
+DELETE http://localhost:3000/user/2
+Content-Type: application/json
